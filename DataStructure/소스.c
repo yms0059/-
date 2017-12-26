@@ -1,97 +1,150 @@
 #include<stdio.h>
 #include<stdlib.h>
 
-#define MAX_LIST_SIZE 100
-
 typedef int element;
-typedef struct {
-	element list[MAX_LIST_SIZE];//배열 정의
-	int length;                 //현재 배열에 저장된 자료들의 개수
-}ArrayListType;                //구조체 이름
+typedef struct ListNode {
+	element data;
+	struct ListNode *link;
+}ListNode;
 
-							   //오류 처리 함수
-void error(char *message)
+void error(char*message)
 {
 	fprintf(stderr, "%s\n", message);
 	exit(1);
 }
 
-//리스트 초기화
-void init(ArrayListType *L)//L은 구조체를 가리키는 포인터
+void insert_node(ListNode**phead, ListNode*p, ListNode*new_node)  //phead포인터를 가리키는 포인터/선행노드를 가리키는 포인터/삽입될 새로운 노드를 가리키는 노드
 {
-	L->length = 0; //구조체 L에접근 값에 들어가서현재 배얄에 저장되어있는 자려개수를 0으로 구조체 ArrayListType의 주소를 받아온다 L은 구저체를 가리키는 포인터다
-				   //(*L).length = 0;
-}
-//리스트가 비어있으면 1을 반환
-//그렇지 않으면 0을 반환
-int is_empty(ArrayListType *L) //구조체가 비어있는지 확인 
-{
-	return L->length == 0;     //구조체의 주소를 받아와서 (return 값은 int true 만약에 Length가0이면 1을 반환 그렇지 않으면 0을반환)
-}
-//리스트가 가득 차 있으면 1을 반환
-//그렇지 않으면 0을 반환
-int is_full(ArrayListType*L)
-{
-	return L->length == MAX_LIST_SIZE;  //구조체가 가득차있으면 1을 반환 아니면 0을 반환
-}
-
-void dispaly(ArrayListType*L)
-{
-	int i;
-	for (i = 0; i< L->length; i++)
+	if (*phead == NULL) //공백리스트인 경우
 	{
-		printf("%d\n", L->list[i]);
+		new_node->link = NULL;
+		*phead = new_node;
+	}
+	else if (p == NULL)//p가 NULL이면 첫 번째 노드로 삽입
+	{
+		new_node->link = *phead;
+		*phead = new_node;
+	}
+	else
+	{
+		new_node->link = p->link;
+		*phead = new_node;
 	}
 }
 
-//삽입함수
-void add(ArrayListType *L, int position, element item) //구조체를 가리키는 포인터,몇번째 삽입할것인지,십입하고자하눈 자료
+void remove_node(ListNode**phead, ListNode*p, ListNode*remove)  //phead포인터를 가리키는 포인터/삭제될 노드의 선행노드/제거될 노드
 {
-	if (!is_full(L) && (position >= 0) && (position <= L->length)) //Add하수를 사용할수 있는지와/
+	if (p == NULL) //공백리스트인 경우
 	{
-		int i;
-		for (i = (L->length - 1); i >= position; i--)//맨끝 
-			L->list[i + 1] = L->list[i];//빈칸을 만들고
-		L->list[position] = item;
-		L->length++;//Length증가
+		*phead = (*phead)->link;
+	}
+	else
+	{
+		p->link = remove->link;
+		free(remove);
 	}
 }
 
-element deleted(ArrayListType*L, int positon)//삭제하고싶은 포지션
+void display(ListNode*head)
 {
-	int i;
-	element item;
+	ListNode*p = head;
+	while (p != NULL)
+	{
+		printf("%d->", p->data);
+		p = p->link;
+	}
+	printf("\n");
+}
 
-	if (positon < 0 || positon >= L->length)
-		error("위치오류");
-	item = L->list[positon];
-	for (i = positon; i < (L->length - 1); i++)
-		L->list[i] = L->list[i + 1];
-	L->length--;
-	return item;
+void display_recur(ListNode*head)//순환적인 리스트 탐색 알고리즘 
+{
+	ListNode*p = head;
+	if (p != NULL)
+	{
+		printf("%d->", p->data);
+		display_recur(p->link);
+	}
+}
+
+ListNode*search(ListNode*head, int x)
+{
+	ListNode*p;
+	p = head;
+	while (p != NULL)
+	{
+		if (p->data == x) return p;
+		p = p->link;
+	}
+	return p;
+}
+
+ListNode*concat(ListNode*head1, ListNode*head2)
+{
+	ListNode *p;
+	if (head1 == NULL)return head2;
+	else if (head2 == NULL)return head1;
+	else {
+		p = head1;
+		while (p->link != NULL)
+			p = p->link;
+		p->link = head2;
+		return head1;
+	}
+}
+
+ListNode*reverse(ListNode *head)
+{
+	ListNode *p, *q, *r;
+	p = head;   //p는 아직 처리되지 않은 노드
+	q = NULL;   //q는 역순으로 만들 노드
+	while (p != NULL) {
+		r = q;    //r은 역순으로 된 노드, r은 q,q는 p를 차례로 따라간다.
+		q = p;
+		p = p->link;
+		q->link = r;  //q의 링크 방향을 바꾼다.
+	}
+	return q;  //q는 역순으로 돈 리스트의 헤드 포인터
+}
+
+ListNode*create_node(element data, ListNode*link)
+{
+	ListNode*new_node;
+	new_node = (ListNode*)malloc(sizeof(ListNode));
+	if (new_node == NULL) error("메모리 할당 에러");
+	new_node->data = data;
+	new_node->link = link;
+	return(new_node);
 }
 
 int main()
 {
-	ArrayListType list1;
-	ArrayListType *plist;
+	ListNode*list1 = NULL, *list2 = NULL, *list3 = NULL;
+	ListNode*p;
 
-	init(&list1);
-	add(&list1, 0, 10);
-	add(&list1, 0, 20);
-	add(&list1, 0, 30);
-	dispaly(&list1);
+	//list1= 30->20->10
+	insert_node(&list1, NULL, create_node(10, NULL));
+	insert_node(&list1, NULL, create_node(20, NULL));
+	insert_node(&list1, NULL, create_node(30, NULL));
+	display(list1);
 
-	plist = (ArrayListType*)malloc(sizeof(ArrayListType));
-	init(plist);
-	add(plist, 0, 10);
-	add(plist, 0, 20);
-	add(plist, 0, 30);
-	dispaly(plist);
+	//list1=2-->10
+	remove_node(&list1, NULL, list1);
+	display(list1);
 
+	//list2= 80->70->60
+	insert_node(&list2, NULL, create_node(60, NULL));
+	insert_node(&list2, NULL, create_node(70, NULL));
+	insert_node(&list2, NULL, create_node(80, NULL));
+	display(list2);
+
+	//list1=list1+list2
+	list3 = concat(list1, list2);
+	display(list3);
+
+	//list1을 역순으로
+	list3 = reverse(list3);
+	display(list3);
+	//list1에서 20탐색
+	p = search(list3, 110);
+	printf("탐색성공:%d\n", p->data);
 }
-
-
-
-
-
