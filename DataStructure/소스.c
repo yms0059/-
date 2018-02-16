@@ -1,86 +1,85 @@
-#include<stdio.h>
-#include<stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#define CAPACITY 100
+#define BUFFER_SIZE 20
+char * names[CAPACITY]; /* names */
+char * numbers[CAPACITY]; /* phone numbers */
+int n = 0; /* number of people in phone directory */
+void add();
+void find();
+void status();
+void remove();
 
-typedef int element;
-typedef struct ListNode {
-	element data;
-	struct ListNode *link;
-}ListNode;
-
-void error(char*message)
-{
-	fprintf(stderr, "%s\n", message);
-	exit(1);
+int main() {
+	char command[BUFFER_SIZE];
+	while (1) {
+		printf("$ ");
+		scanf("%s", command);
+		if (strcmp(command, "add") == 0)
+			add();
+		else if (strcmp(command, "find") == 0)
+			find();
+		else if (strcmp(command, "status") == 0)
+			status();
+		else if (strcmp(command, "delete") == 0)
+			remove();
+		else if (strcmp(command, "exit") == 0)
+			break;
+	}
+	return 0;
 }
 
-
-ListNode*create_node(element data, ListNode*link)
-{
-	ListNode*new_node;
-	new_node = (ListNode*)malloc(sizeof(ListNode));
-	if (new_node == NULL) error("메모리 할당 에러");
-	new_node->data = data;
-	new_node->link = link;
-	return(new_node);
+void add() {
+	char buf1[BUFFER_SIZE], buf2[BUFFER_SIZE];
+	scanf("%s", buf1);
+	scanf("%s", buf2);
+	names[n] = strdup(buf1);
+	numbers[n] = strdup(buf2);
+	n++;
+	printf("%s was added successfully.\n", buf1);
 }
 
-void display(ListNode*head)
+/*char *strdup(char *s)
 {
-	ListNode*p = head;
-	while (p != NULL)
-	{
-		printf("%d->", p->data);
-		p = p->link;
+char *p;
+p = (char *)malloc(strlen(s) + 1);
+if (p != NULL)
+strcpy(p, s);
+return p;
+}*/
+
+void find() {
+	char buf[BUFFER_SIZE];
+	scanf("%s", buf);
+	int i;
+	for (i = 0; i<n; i++) {
+		if (strcmp(buf, names[i]) == 0) {
+			printf("%s\n", numbers[i]);
+			return;
+		}
 	}
-	printf("\n");
+	printf("No person named '%s' exists.\n", buf);
 }
 
-void insert_first(ListNode**phead, ListNode*node) 
-{
-	if (*phead == NULL) {
-		*phead = node;
-		node->link = node;
-	}
-	else {
-		node->link = (*phead)->link;
-		(*phead)->link = node;
-	}
+void status() {
+	int i;
+	for (i = 0; i<n; i++)
+		printf("%s %s\n", names[i], numbers[i]);
+	printf("Total %d persons.\n", n);
 }
 
-void insert_last(ListNode**phead, ListNode*node) {
-	if (*phead == NULL) {
-		*phead = node;
-		node->link = node;
+void remove() {
+	char buf[BUFFER_SIZE];
+	scanf("%s", buf);
+	int i;
+	for (i = 0; i<n; i++) {
+		if (strcmp(buf, names[i]) == 0) {
+			names[i] = names[n - 1];
+			numbers[i] = numbers[n - 1];
+			n--;
+			printf("'%s' was deleted successfully. \n", buf);
+			return;
+		}
 	}
-	else {
-		node->link = (*phead)->link;
-		(*phead)->link = node;
-		*phead = node;
-	}
-}
-
-
-ListNode*search(ListNode*head, int x)
-{
-	ListNode*p;
-	p = head;
-	while (p != NULL)
-	{
-		if (p->data == x) return p;
-		p = p->link;
-	}
-	return p;
-}
-
-
-int main()
-{
-	ListNode*list1 = NULL;
-
-	//list=20->10->30
-	insert_first(&list1, create_node(10, NULL));
-	insert_first(&list1, create_node(20, NULL));
-	insert_last(&list1, create_node(30, NULL));
-
-	display(list1);
+	printf("No person named '%s' exists.\n", buf);
 }
