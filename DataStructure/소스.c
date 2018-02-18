@@ -1,146 +1,126 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#define INIT_CAPACITY 3 /* 배열 재할당을 테스트하기 위해서 일부러 아주 작은 값으로 */
-#define BUFFER_SIZE 50
-char ** names;  //char *타입의 배열의 이름이므로 char **타입의 변수이다.
-char ** numbers;
+#define CAPACITY 100
+#define BUFFER_LENGTH 100
 
-int capicity = INIT_CAPACITY;//배열 재할당을 테스트하기 위해서 작은값으로 할거야
-int i = 0;
+typedef struct person {  //구조체 struct person을 정의하면서 동시에 그것을 
+	char *name;          //Person renaming 했다.
+	char *number;        //이런 식으로 사용할 경우 struct tag인 person을 생략해도 된다.
+	char *email;
+	char *group;
+} Person;
 
-char delim[] = " ";//문자열을 트림(자르기) 공백열을 자르기 위해서
+Person directory[CAPACITY]; // person 타입의 배열 directory를 선언한다.
+int n = 0; //phone directory 안에 있는 사람 수 초기화
+
+int read_line(FILE * fp, char str[], int n)  //사용자가 키보드만이 아니라 파일로 부터 읽을 수 있도록 하였다.
+{
+	int ch, i = 0;
+	while ((ch = fgetc(fp)) != '\n' && ch != EOF)
+		if (i < n)
+			str[i++] = ch;
+	str[i] = '\0';
+	return i;
+}
 
 int main() {
-
-	init_directory(); //이 함수에서 배열 names와 numbers를 생성한다.
-	process_command(); //사용자의 명령을 받아 처리하는 부분을 별개의 함수로 만들었다.
-	
-	return 0;
-}
-
-void init_directory() {
-	names = (char**)malloc(INIT_CAPACITY * sizeof(char*)); //할당할 메모리의 byte수를 지정한다. 직접 숫자로 지정하는 것 보다 이렇게 sizeof 연산자를 사용하는 것이 바람직하다.
-	numbers = (char**)malloc(INIT_CAPACITY * sizeof(char*));
-}
-
-int read_line(char str[], int limit) {
-	int ch, i = 0; //ch는 입력받는값
-
-	while ((ch = getchar()) != '\n')//줄바꿈 엔터누르기 전까지 읽는다
-		if (i < limit - 1)//배열의 용량을 초과하지 않을 때만 저장한다.
-			str[i++] = ch;//배열 첫번째 열에 입력하고 i++해주고 엔터가 들어오기전까지 계속 입력받는 것을 수행을 한다.
-
-	str[i] = '\0';//모든 작업을 마무리하고 문자 배열의 특성상 마지막에 공백값을 넣어주는 작업이다.
-
-	return i;// 실제로 입력받은 i(글자의 수)를 반환한다.
-}
-
-/*
-#include <stdio.h>
-#include <string.h>
-int main(void) {
-	char str[] = "now # is the time # to start preparing ### for the exam#”;
-		char delim[] = "#";
-	char *token;
-	token = strtok(str, delim);
-	while (token != NULL) {
-		printf("next token is: %s:%d\n”, token, strlen(token));
-			token = strtok(NULL, delim);
-	}
-	return 0;
-}
-*/
-
-/*
-#include <stdio.h>
-#include <string.h>
-int main(void) {
-char str[] = " study hard, or sleep. ";
-char delim[] = " ";
-char *token;
-token = strtok( str, delim );
-while ( token != NULL ) {
-printf( "next token is: %s:%d\n", token, strlen(token));
-token = strtok( NULL, delim );
-}
-return 0;
-}
-*/
-
-void process_command() {
-	char command_line[BUFFER_SIZE];//한 라인을 통채로 읽어오기 위한 버퍼
-	char *command, *argument1, *argument2;
-
+	char command_line[BUFFER_LENGTH];
+	char *command, *argument;
+	char name_str[BUFFER_LENGTH];
 	while (1) {
 		printf("$ ");
-
-		if (read_line(command_line, BUFFER_SIZE) <= 0) //명령줄을 통채로 읽는다.
+		if (read_line(stdin, command_line, BUFFER_LENGTH) <= 0)
 			continue;
-		command = strtok(command_line, delim);
-		if (command == NULL) continue;
-		if (strcmp(command, "read") == 0) { //첫 번째 토큰은 명령어이다.
-			argument1 = strtok(NULL, delim);
-			if (argument1 == NULL) {       //read명령에서 두번째 토큰은 파일명이다.
-				printf("File name required.\n");
+		command = strtok(command_line, " ");
+		if (strcmp(command, "read") == 0) {
+			argument = strtok(NULL, " ");
+			if (argument == NULL) {
+				printf("Invalid arguments.\n");
 				continue;
 			}
-			load(argument1);//파일명을 인자로 주면서 load를 호출한다.
+			load(argument);
 		}
 		else if (strcmp(command, "add") == 0) {
-			argument1 = strtok(NULL, delim);
-			argument2 = strtok(NULL, delim);
-			if (argument1 == NULL || argument2 == NULL) {
-				printf("Invalid arguments.\n");
-				continue;
+			if (compose_name(name_str, BUFFER_LENGTH) <= 0) {
+				printf(“Name required.\n");
+					continue;
 			}
-			add(argument1, argument2);
-			printf("%s was added successfully.\n", argument1);
+			handle_add(name_str);
 		}
 		else if (strcmp(command, "find") == 0) {
-			argument1 = strtok(NULL, delim);
-			if (argument1 == NULL) {
-				printf("Invalid arguments.\n");
+			if (compose_name(name_str, BUFFER_LENGTH) <= 0) {
+				printf("Name required.\n");
 				continue;
 			}
-			find(argument1);
+			find(name_str);
 		}
-		else if (strcmp(command, "status") == 0)
+		
+		else if (strcmp(command, "status") == 0) {
 			status();
+		}
 		else if (strcmp(command, "delete") == 0) {
-			argument1 = strtok(NULL, delim);
-			if (argument1 == NULL) {
+			if (compose_name(name_str, BUFFER_LENGTH) <= 0) {
 				printf("Invalid arguments.\n");
 				continue;
 			}
-			remove(argument1);
+			remove(name_str);
 		}
+		
 		else if (strcmp(command, "save") == 0) {
-			argument1 = strtok(NULL, delim);
-			argument2 = strtok(NULL, delim);
-			if (argument1 == NULL || strcmp("as", argument1) != 0
-				|| argument2 == NULL) {
-				printf("Invalid command format.\n");
+			argument = strtok(NULL, " ");
+			if (strcmp(argument, "as") != 0) {
+				printf("Invalid arguments.\n");
 				continue;
 			}
-			save(argument2);
+			argument = strtok(NULL, " ");
+			if (argument == NULL) {
+				printf("Invalid arguments.\n");
+				continue;
+			}
+			save(argument);
 		}
 		else if (strcmp(command, "exit") == 0)
 			break;
 	}
+	return 0;
+}
+
+int compose_name(char str[], int limit) {
+	char * ptr;
+	int length = 0;
+	ptr = strtok(NULL, " ");
+	if (ptr == NULL)
+		return 0;
+	strcpy(str, ptr);
+	length += strlen(ptr);
+	while ((ptr = strtok(NULL, " ")) != NULL) {
+		if (length + strlen(ptr) + 1 < limit) {
+			str[length++] = ' ';
+			str[length] = '\0';
+			strcat(str, ptr);
+			length += strlen(ptr);
+		}
+	}
+	return length;
 }
 
 void load(char *fileName) {
-	char buf1[BUFFER_SIZE];
-	char buf2[BUFFER_SIZE];
+	char buffer[BUFFER_LENGTH];
+	char * name, *number, *email, *group;
 	FILE *fp = fopen(fileName, "r");
 	if (fp == NULL) {
 		printf("Open failed.\n");
 		return;
 	}
-	while ((fscanf(fp, "%s", buf1) != EOF)) {
-		fscanf(fp, "%s", buf2);
-		add(buf1, buf2);
+	while (1) {
+		if (read_line(fp, buffer, BUFFER_LENGTH) <= 0)
+			break;
+		name = strtok(buffer, "#");
+		number = strtok(NULL, "#");
+		email = strtok(NULL, "#");
+		group = strtok(NULL, "#");
+		add(name, number, email, group);
 	}
 	fclose(fp);
 }
@@ -153,9 +133,29 @@ void save(char *fileName) {
 		return;
 	}
 	for (i = 0; i<n; i++) {
-		fprintf(fp, "%s %s\n", names[i], numbers[i]);
+		fprintf(fp, "%s#", directory[i].name);
+		fprintf(fp, "%s#", directory[i].number);
+		fprintf(fp, "%s#", directory[i].email);
+		fprintf(fp, "%s#\n", directory[i].group);
 	}
 	fclose(fp);
+}
+
+int search(char *name) {
+	int i;
+	for (i = 0; i<n; i++) {
+		if (strcmp(name, directory[i].name) == 0) {
+			return i;
+		}
+	}
+	return -1;
+}
+void print_person(Person p)
+{
+	printf("%s:\n", p.name);
+	printf(" Phone: %s\n", p.number);
+	printf(" Email: %s\n", p.email);
+	printf(" Group: %s\n", p.group);
 }
 
 void remove(char *name) {
@@ -164,10 +164,10 @@ void remove(char *name) {
 		printf("No person named '%s' exists.\n", name);
 		return;
 	}
+	release_person(i);
 	int j = i;
 	for (; j<n - 1; j++) {
-		names[j] = names[j + 1];
-		numbers[j] = numbers[j + 1];
+		directory[j] = directory[j + 1];
 	}
 	n--;
 	printf("'%s' was deleted successfully. \n", name);
@@ -176,7 +176,7 @@ void remove(char *name) {
 void status() {
 	int i;
 	for (i = 0; i<n; i++)
-		printf("%s %s\n", names[i], numbers[i]);
+		print_person(directory[i]);
 	printf("Total %d persons.\n", n);
 }
 void find(char *name) {
@@ -184,44 +184,32 @@ void find(char *name) {
 	if (index == -1)
 		printf("No person named '%s' exists.\n", name);
 	else
-		printf("%s\n", numbers[index]);
-}
-int search(char *name) {
-	int i;
-	for (i = 0; i<n; i++) {
-		if (strcmp(name, names[i]) == 0) {
-			return i;
-		}
-	}
-	return -1;
+		print_person(directory[index]);
 }
 
-void add(char * name, char * number) {
-	if (n >= capacity)
-		reallocate();
+void handle_add(char * name) {
+	char number[BUFFER_LENGTH], email[BUFFER_LENGTH], group[BUFFER_LENGTH];
+	char empty[] = " ";
+	printf(" Phone: ");
+	read_line(stdin, number, BUFFER_LENGTH);
+	printf(" Email: ");
+	read_line(stdin, email, BUFFER_LENGTH);
+	printf(" Group: ");
+	read_line(stdin, group, BUFFER_LENGTH);
+	add(name, (char *)(strlen(number)>0 ? number : empty),
+		(char *)(strlen(email)>0 ? email : empty),
+		(char *)(strlen(group)>0 ? group : empty));
+}
+
+void add(char *name, char *number, char *email, char *group) {
 	int i = n - 1;
-	while (i >= 0 && strcmp(names[i], name) > 0) {
-		names[i + 1] = names[i];
-		numbers[i + 1] = numbers[i];
+	while (i >= 0 && strcmp(directory[i].name, name) > 0) {
+		directory[i + 1] = directory[i];
 		i--;
 	}
-	names[i + 1] = strdup(name);
-	numbers[i + 1] = strdup(number);
+	directory[i + 1].name = strdup(name);
+	directory[i + 1].number = strdup(number);
+	directory[i + 1].email = strdup(email);
+	directory[i + 1].group = strdup(group);
 	n++;
-}
-
-void reallocate()
-{
-	int i;
-	capacity *= 2;
-	char **tmp1 = (char **)malloc(capacity * sizeof(char *));
-	char **tmp2 = (char **)malloc(capacity * sizeof(char *));
-	for (i = 0; i<n; i++) {
-		tmp1[i] = names[i];
-		tmp2[i] = numbers[i];
-	}
-	free(names);
-	free(numbers);
-	names = tmp1;
-	numbers = tmp2;
 }
